@@ -29,14 +29,14 @@ export class UsersService {
     return this.jwtService.refreshToken(refreshToken);
   }
 
-  canDo(user: UserI, permission: string): boolean {
-    console.log(`Permission pedido: ${permission}`);
-    const result = user.permissionCodes.includes(permission);
-    if (!result) {
-      throw new UnauthorizedException();
-    }
-    return true;
-  }
+  // canDo(user: UserI, permission: string): boolean {
+  //   console.log(`Permission pedido: ${permission}`);
+  //   const result = user.permissionCodes.includes(permission);
+  //   if (!result) {
+  //     throw new UnauthorizedException();
+  //   }
+  //   return true;
+  // }
 
   async register(body: RegisterDTO) {
     try {

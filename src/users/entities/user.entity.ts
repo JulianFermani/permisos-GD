@@ -23,9 +23,4 @@ export class UserEntity extends BaseEntity implements UserI {
 
   @ManyToOne(() => Role, (rol) => rol.users)
   rol: Role;
-
-  // se puede borrar
-  get permissionCodes() {
-    return ["create-users", "list-products", "admin", "mati"];
-  }
 }

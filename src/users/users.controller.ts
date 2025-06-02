@@ -30,6 +30,7 @@ export class UsersController {
   }
 
   @Post(":id/assignRoles")
+  @Permissions(["assignRoles"])
   updateRol(@Param("id") id: string, @Body() updateUserRol: UpdateUserRole) {
     return this.service.updateRol(Number(id), updateUserRol);
   }
@@ -44,15 +45,14 @@ export class UsersController {
     return this.service.register(body);
   }
 
-  @UseGuards(AuthGuard)
-  @Permissions(["admin", "mati"])
-  @Get("can-do/:permission")
-  canDo(
-    @Req() request: RequestWithUser,
-    @Param("permission") permission: string,
-  ) {
-    return this.service.canDo(request.user, permission);
-  }
+  // @UseGuards(AuthGuard)
+  // @Get("can-do/:permission")
+  // canDo(
+  //   @Req() request: RequestWithUser,
+  //   @Param("permission") permission: string,
+  // ) {
+  //   return this.service.canDo(request.user, permission);
+  // }
 
   @Get("refresh-token")
   refreshToken(@Req() request: Request) {
