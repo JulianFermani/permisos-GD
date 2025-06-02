@@ -53,18 +53,44 @@ export class RolesService {
   }
 
   findAll() {
-    return `This action returns all roles`;
+    return this.roleRepository.find();
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} role`;
+    return this.roleRepository.findOne({ where: { id } });
   }
 
-  update(id: number, updateRoleDto: UpdateRoleDto) {
-    return `This action updates a #${id} role`;
+  async update(id: number, updateRoleDto: UpdateRoleDto) {
+    const role = await this.roleRepository.findOne({
+      where: { id },
+      relations: ["permission", "user"],
+    });
+    if (!role) {
+      throw new NotFoundException(`This role with ${id} not exist`);
+    }
+    if (updateRoleDto.name !== undefined) {
+      role.name == updateRoleDto.name;
+    }
+    if (updateRoleDto.description !== undefined) {
+      role.description == updateRoleDto.description;
+    }
+    if (updateRoleDto.permissions) {
+      const newPermission = this.permissionRepository.create(
+        updateRoleDto.permissions,
+      );
+
+      await this.permissionRepository.save(newPermission);
+      role.permissions = newPermission;
+    }
+    return await this.roleRepository.save(role);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} role`;
+  async remove(id: number): Promise<void> {
+    const role = await this.roleRepository.findOne({ where: { id } });
+
+    if (!role) {
+      throw new NotFoundException(`This role with this ${id} not found`);
+    }
+    await this.roleRepository.remove(role);
   }
 }
