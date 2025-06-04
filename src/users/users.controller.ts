@@ -4,9 +4,9 @@ import {
   Get,
   Param,
   Post,
-  Put,
   Req,
   UseGuards,
+  Headers,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { LoginDTO } from "../interfaces/login.dto";
@@ -16,12 +16,17 @@ import { AuthGuard } from "../middlewares/auth.middleware";
 import { RequestWithUser } from "src/interfaces/request-user";
 import { UpdateUserRole } from "./dto/update-user-role.dto";
 import { Permissions } from "src/middlewares/decorators/permissions.decorator";
+import { AuthService } from "src/middlewares/auth.services";
 
 @Controller("")
 export class UsersController {
-  constructor(private service: UsersService) {}
+  constructor(
+    private service: UsersService,
+    private authService: AuthService,
+  ) {}
 
   @UseGuards(AuthGuard)
+  @Permissions(["test"])
   @Get("me")
   me(@Req() req: RequestWithUser) {
     return {
@@ -29,6 +34,8 @@ export class UsersController {
     };
   }
 
+  @UseGuards(AuthGuard)
+  @Permissions(["test"])
   @Post(":id/assignRoles")
   @Permissions(["assignRoles"])
   updateRol(@Param("id") id: string, @Body() updateUserRol: UpdateUserRole) {
@@ -46,6 +53,7 @@ export class UsersController {
   }
 
   // @UseGuards(AuthGuard)
+  // @Permissions(["admin"])
   // @Get("can-do/:permission")
   // canDo(
   //   @Req() request: RequestWithUser,
@@ -58,6 +66,17 @@ export class UsersController {
   refreshToken(@Req() request: Request) {
     return this.service.refreshToken(
       request.headers["refresh-token"] as string,
+    );
+  }
+
+  @Post("auth/validate-permissions")
+  validatePermission(
+    @Headers("authorization") authorization: string,
+    @Body("requiredPermissions") requiredPermissions: string[],
+  ) {
+    return this.authService.validateTokenAndPermissions(
+      authorization,
+      requiredPermissions,
     );
   }
 }
