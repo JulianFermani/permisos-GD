@@ -128,7 +128,7 @@ curl --location '127.0.0.1:3001/roles' \
     "code":"admin",
     "name": "admin",
     "description": "Tiene todos los permisos",
-    "permissions": [{"name":"getRol"}, {"name":"createRol"}, {"name":"updateRol"}, {"name":"deleteRol"}]
+    "permissions": [{"name":"getRole"}, {"name":"createRole"}, {"name":"updateRole"}, {"name":"deleteRole"}]
 }'
 
 # curl --location '127.0.0.1:3001/roles' \
