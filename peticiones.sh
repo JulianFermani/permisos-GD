@@ -52,7 +52,7 @@ declare -A PERMISOS=(
 
 # Roles a crear
 declare -A ROLES=(
-  ["admin"]='{"code":"admin","name":"admin","description":"Tiene todos los permisos","permissions":[{"name":"getRole"},{"name":"createRole"},{"name":"updateRole"},{"name":"deleteRole"}]}'
+  ["admin"]='{"code":"admin","name":"admin","description":"Tiene todos los permisos","permissions":[{"name":"getRole"},{"name":"createRole"},{"name":"updateRole"},{"name":"deleteRole"},{"name":"getPermission"},{"name":"createPermission"},{"name":"updatePermission"},{"name":"deletePermission"}]}'
   # Puedes agregar más roles aquí
 )
 
