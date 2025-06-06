@@ -28,7 +28,7 @@ export class PermissionsService {
   async update(id: number, updatePermissionDto: UpdatePermissionDto) {
     const permission = await this.permissionRepository.findOne({
       where: { id },
-      relations: ["role"],
+      relations: ["roles"],
     });
     if (!permission) {
       throw new NotFoundException(`This permission ${id} not exist`);
