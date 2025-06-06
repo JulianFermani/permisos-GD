@@ -1,153 +1,99 @@
-echo "Creando permisos..."
+#!/bin/bash
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "admin",
-    "description": "Este permiso es de admins"
-}'
+# Colores y estilos
+GREEN='\033[0;32m'
+BLUE='\033[1;34m'
+YELLOW='\033[1;33m'
+CYAN='\033[1;36m'
+NC='\033[0m' # Sin color
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "createZones",
-    "description": "Asigna el permiso de publicar zonas"
-}'
+print_section() {
+  echo -e "\n${CYAN}====================================================${NC}"
+  echo -e "${BLUE} $1 ${NC}"
+  echo -e "${CYAN}====================================================${NC}\n"
+}
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "getZones",
-    "description": "Asigna el permiso de visualizar las zonas"
-}'
+print_step() {
+  echo -e "${YELLOW}➡️  $1...${NC}"
+}
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "modifyZone",
-    "description": "Asigna el permiso de modificar zonas"
-}'
+print_success() {
+  echo -e "${GREEN}✅ $1 creado correctamente${NC}\n"
+}
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "deleteZone",
-    "description": "Asigna el permiso de borrar zonas"
-}'
+# Permisos a crear (nombre y descripción)
+declare -A PERMISOS=(
+  # Roles
+  ["createRole"]="Crear roles"
+  ["getRole"]="Visualizar roles"
+  ["deleteRole"]="Eliminar roles"
+  ["updateRole"]="Actualizar roles"
+  # Permisos
+  ["createPermission"]="Crear permisos"
+  ["getPermission"]="Visualizar permisos"
+  ["deletePermission"]="Eliminar permisos"
+  ["updatePermission"]="Actualizar permisos"
+  # Zonas
+  ["createZones"]="Asigna el permiso de publicar zonas"
+  ["getZones"]="Asigna el permiso de visualizar las zonas"
+  ["modifyZone"]="Asigna el permiso de modificar zonas"
+  ["deleteZone"]="Asigna el permiso de borrar zonas"
+  # Delivery
+  ["createDelivery"]="Asigna el permiso de visualizar los delivery"
+  ["modifyDelivery"]="Asigna el permiso de modificar los delivery"
+  ["getDelivery"]="Asigna el permiso de visualizar los delivery en base a la proximidad"
+  ["deleteDelivery"]="Eliminar deliverys"
+  # Estados
+  ["createStatus"]="crea estados"
+  ["getStatus"]="obtiene los estados"
+  ["modifyStatus"]="modifica los estados"
+  ["DeleteStatus"]="elimina los estados creados"
+)
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "createDelivery",
-    "description": "Asigna el permiso de visualizar los delivery"
-}'
+# Roles a crear
+declare -A ROLES=(
+  ["admin"]='{"code":"admin","name":"admin","description":"Tiene todos los permisos","permissions":[{"name":"getRole"},{"name":"createRole"},{"name":"updateRole"},{"name":"deleteRole"},{"name":"getPermission"},{"name":"createPermission"},{"name":"updatePermission"},{"name":"deletePermission"}]}'
+  # Puedes agregar más roles aquí
+)
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "modifyDelivery",
-    "description": "Asigna el permiso de modificar los delivery"
-}'
+# Usuarios a crear (email y password)
+declare -A USERS=(
+  ["mati@gmail.com"]="mati"
+  ["rama@gmail.com"]="ramaDelivery"
+  ["Lichi@gmail.com"]="LichiUser"
+)
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "getDelivery",
-    "description": "Asigna el permiso de visualizar los delivery en base a la proximidad"
-}'
+print_section "Creando permisos 🚦"
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "deleteDelivery",
-    "description": "Eliminar deliverys"
-}'
+for name in "${!PERMISOS[@]}"; do
+  desc=${PERMISOS[$name]}
+  print_step "Creando permiso: $name"
+  curl -s --location '127.0.0.1:3001/permissions' \
+    --header 'Content-Type: application/json' \
+    --data "{\"name\": \"$name\", \"description\": \"$desc\"}" > /dev/null
+  print_success "$name"
+done
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "createStatus",
-    "description": "crea estados"
-}'
+print_section "Creando roles 🧑‍💼"
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "getStatus",
-    "description": "obtiene los estados"
-}'
+for role in "${!ROLES[@]}"; do
+  print_step "Creando rol: $role"
+  curl -s --location '127.0.0.1:3001/roles' \
+    --header 'Content-Type: application/json' \
+    --data "${ROLES[$role]}" > /dev/null
+  print_success "$role"
+done
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "modifyStatus",
-    "description": "modifica los estados"
-}'
+print_section "Creando usuarios 👤"
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "DeleteStatus",
-    "description": "elimina los estados creados"
-}'
+for email in "${!USERS[@]}"; do
+  pass=${USERS[$email]}
+  print_step "Creando usuario: $email"
+  curl -s --location '127.0.0.1:3001/register' \
+    --header 'Content-Type: application/json' \
+    --data-raw "{\"email\": \"$email\", \"password\": \"$pass\"}" > /dev/null
+  print_success "$email"
+done
 
-curl --location '127.0.0.1:3000/permissions' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "name": "mati",
-    "description": "Este permiso es del profe"
-}'
+echo -e "${GREEN}🎉 ¡Todos los permisos, roles y usuarios han sido creados!${NC}\n"
 
-echo "Creando rol..."
-
-curl --location '127.0.0.1:3000/roles' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "code":"Admin",
-    "name": "admin_mati",
-    "description": "Este rol es de cracks",
-    "permissions": [{"name":"admin"}]
-}'
-
-curl --location '127.0.0.1:3000/roles' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "code":"Delivery",
-    "name": "delivery",
-    "description": "Este rol es para los deliveries",
-    "permissions": [{"name":"delivery"}]
-}'
-
-curl --location '127.0.0.1:3000/roles' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "code":"User",
-    "name": "user",
-    "description": "Este rol es para users",
-    "permissions": [{"name":"user"}]
-}'
-
-echo "Creando usuario..."
-
-curl --location '127.0.0.1:3000/register' \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-    "email": "mati@gmail.com",
-    "password": "mati"
-}'
-
-# Delivery
-curl --location '127.0.0.1:3000/register' \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-    "email": "rama@gmail.com",
-    "password": "ramaDelivery"
-}'
-
-#User
-curl --location '127.0.0.1:3000/register' \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-    "email": "Lichi@gmail.com",
-    "password": "LichiUser"
-}'
