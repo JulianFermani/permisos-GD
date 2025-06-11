@@ -1,99 +1,187 @@
 #!/bin/bash
 
-# Colores y estilos
-GREEN='\033[0;32m'
-BLUE='\033[1;34m'
-YELLOW='\033[1;33m'
-CYAN='\033[1;36m'
-NC='\033[0m' # Sin color
+API_URL="http://localhost:3001"
+DLV_URL="http://localhost:3000"
+JWT_FILE=".jwt_token"
 
-print_section() {
-  echo -e "\n${CYAN}====================================================${NC}"
-  echo -e "${BLUE} $1 ${NC}"
-  echo -e "${CYAN}====================================================${NC}\n"
+function register() {
+  echo "Registrando usuario pepito..."
+  curl -s --location "$API_URL/register" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "email": "pepito@normal.com",
+      "password": "pepito"
+    }' | jq
 }
 
-print_step() {
-  echo -e "${YELLOW}➡️  $1...${NC}"
+function login_as_admin() {
+  echo "Logueando como admin..."
+  RESPONSE=$(curl -s --location "$API_URL/login" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "email": "admin@sistema.com",
+      "password": "admin123"
+    }')
+
+  echo "$RESPONSE" | jq
+
+  JWT=$(echo "$RESPONSE" | jq -r '.accessToken')
+
+  if [[ "$JWT" == "null" || -z "$JWT" ]]; then
+    echo "❌ No se pudo obtener el JWT."
+  else
+    echo "✅ JWT obtenido y guardado."
+    echo "$JWT" > "$JWT_FILE"
+  fi
 }
 
-print_success() {
-  echo -e "${GREEN}✅ $1 creado correctamente${NC}\n"
+function login_as_user() {
+  echo "Logueando como pepito..."
+  RESPONSE=$(curl -s --location "$API_URL/login" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "email": "pepito@normal.com",
+      "password": "pepito"
+    }')
+
+  echo "$RESPONSE" | jq
+
+  JWT=$(echo "$RESPONSE" | jq -r '.accessToken')
+
+  if [[ "$JWT" == "null" || -z "$JWT" ]]; then
+    echo "❌ No se pudo obtener el JWT."
+  else
+    echo "✅ JWT obtenido y guardado."
+    echo "$JWT" > "$JWT_FILE"
+  fi
 }
 
-# Permisos a crear (nombre y descripción)
-declare -A PERMISOS=(
-  # Roles
-  ["createRole"]="Crear roles"
-  ["getRole"]="Visualizar roles"
-  ["deleteRole"]="Eliminar roles"
-  ["updateRole"]="Actualizar roles"
-  # Permisos
-  ["createPermission"]="Crear permisos"
-  ["getPermission"]="Visualizar permisos"
-  ["deletePermission"]="Eliminar permisos"
-  ["updatePermission"]="Actualizar permisos"
-  # Zonas
-  ["createZones"]="Asigna el permiso de publicar zonas"
-  ["getZones"]="Asigna el permiso de visualizar las zonas"
-  ["modifyZone"]="Asigna el permiso de modificar zonas"
-  ["deleteZone"]="Asigna el permiso de borrar zonas"
-  # Delivery
-  ["createDelivery"]="Asigna el permiso de visualizar los delivery"
-  ["modifyDelivery"]="Asigna el permiso de modificar los delivery"
-  ["getDelivery"]="Asigna el permiso de visualizar los delivery en base a la proximidad"
-  ["deleteDelivery"]="Eliminar deliverys"
-  # Estados
-  ["createStatus"]="crea estados"
-  ["getStatus"]="obtiene los estados"
-  ["modifyStatus"]="modifica los estados"
-  ["DeleteStatus"]="elimina los estados creados"
-)
+function get_permissions() {
+  if [ ! -f "$JWT_FILE" ]; then
+    echo "❌ No hay JWT guardado. Hacé login primero."
+    return
+  fi
 
-# Roles a crear
-declare -A ROLES=(
-  ["admin"]='{"code":"admin","name":"admin","description":"Tiene todos los permisos","permissions":[{"name":"getRole"},{"name":"createRole"},{"name":"updateRole"},{"name":"deleteRole"},{"name":"getPermission"},{"name":"createPermission"},{"name":"updatePermission"},{"name":"deletePermission"}]}'
-  # Puedes agregar más roles aquí
-)
+  JWT=$(cat "$JWT_FILE")
 
-# Usuarios a crear (email y password)
-declare -A USERS=(
-  ["mati@gmail.com"]="mati"
-  ["rama@gmail.com"]="ramaDelivery"
-  ["Lichi@gmail.com"]="LichiUser"
-)
+  echo "Consultando /permissions con JWT..."
+  curl -s --location "$API_URL/permissions/" \
+    --header "Authorization: Bearer $JWT" | jq
+}
 
-print_section "Creando permisos 🚦"
+function get_roles() {
+  if [ ! -f "$JWT_FILE" ]; then
+    echo "❌ No hay JWT guardado. Hacé login primero."
+    return
+  fi
 
-for name in "${!PERMISOS[@]}"; do
-  desc=${PERMISOS[$name]}
-  print_step "Creando permiso: $name"
-  curl -s --location '127.0.0.1:3001/permissions' \
+  JWT=$(cat "$JWT_FILE")
+
+  echo "Consultando /roles con JWT..."
+  curl -s --location "$API_URL/roles/" \
+    --header "Authorization: Bearer $JWT" | jq
+}
+
+function delivery_assign_zone(){
+  if [ ! -f "$JWT_FILE" ]; then
+    echo "❌ No hay JWT guardado. Hacé login primero."
+    return
+  fi
+
+  JWT=$(cat "$JWT_FILE")
+
+  curl -s --location "$DLV_URL/api/v1/delivery/1/assignZone" \
     --header 'Content-Type: application/json' \
-    --data "{\"name\": \"$name\", \"description\": \"$desc\"}" > /dev/null
-  print_success "$name"
+    --header "Authorization: Bearer $JWT" \
+    --data-raw '{
+      "zoneIds": [1]
+    }' | jq
+}
+
+function delete_zone(){
+  if [ ! -f "$JWT_FILE" ]; then
+    echo "❌ No hay JWT guardado. Hacé login primero."
+    return
+  fi
+
+  JWT=$(cat "$JWT_FILE")
+
+  curl -s --location --request DELETE "$DLV_URL/api/v1/zones/3" \
+    --header "Authorization: Bearer $JWT" | jq
+}
+
+function put_zone(){
+  if [ ! -f "$JWT_FILE" ]; then
+    echo "❌ No hay JWT guardado. Hacé login primero."
+    return
+  fi
+
+  JWT=$(cat "$JWT_FILE")
+
+  curl -s --location --request PUT "$DLV_URL/api/v1/zones/1" \
+  --header 'Content-Type: application/json' \
+  --header "Authorization: Bearer $JWT" \
+  --data '{
+    "name": "Zona Sur",
+    "radius": 20,
+    "location": {
+        "lat": 12.0,
+        "lng": 11.0
+    }
+  }' | jq
+}
+
+function patch_zone(){
+  if [ ! -f "$JWT_FILE" ]; then
+    echo "❌ No hay JWT guardado. Hacé login primero."
+    return
+  fi
+
+  JWT=$(cat "$JWT_FILE")
+
+  curl -s --location --request PATCH "$DLV_URL/api/v1/zones/1" \
+  --header 'Content-Type: application/json' \
+  --header "Authorization: Bearer $JWT" \
+  --data '{
+    "name": "Zona Centro"
+  }' | jq
+}
+
+
+function menu() {
+  clear
+  echo "=============================="
+  echo "  🚀 Menú de API Bash Client"
+  echo "=============================="
+  echo "1) Registrar a pepito"
+  echo "2) Login como admin"
+  echo "3) Login como pepito"
+  echo "4) Consultar /permissions"
+  echo "5) Consultar /roles"
+  echo "6) Delete de una zona"
+  echo "7) Put de una zona (cambia todo)"
+  echo "8) Patch de una zona (cambia solo el nombre)"
+  echo "0) Salir"
+  echo "------------------------------"
+  read -p "Elegí una opción: " choice
+
+  case $choice in
+    1) register ;;
+    2) login_as_admin ;;
+    3) login_as_user ;;
+    4) get_permissions ;;
+    5) get_roles ;;
+    6) delete_zone ;;
+    7) put_zone ;;
+    8) patch_zone ;;
+    0) echo "Chau 👋"; exit 0 ;;
+    *) echo "Opción inválida" ;;
+  esac
+}
+
+while true; do
+  menu
+  echo
+  read -p "Presioná Enter para continuar..."
 done
-
-print_section "Creando roles 🧑‍💼"
-
-for role in "${!ROLES[@]}"; do
-  print_step "Creando rol: $role"
-  curl -s --location '127.0.0.1:3001/roles' \
-    --header 'Content-Type: application/json' \
-    --data "${ROLES[$role]}" > /dev/null
-  print_success "$role"
-done
-
-print_section "Creando usuarios 👤"
-
-for email in "${!USERS[@]}"; do
-  pass=${USERS[$email]}
-  print_step "Creando usuario: $email"
-  curl -s --location '127.0.0.1:3001/register' \
-    --header 'Content-Type: application/json' \
-    --data-raw "{\"email\": \"$email\", \"password\": \"$pass\"}" > /dev/null
-  print_success "$email"
-done
-
-echo -e "${GREEN}🎉 ¡Todos los permisos, roles y usuarios han sido creados!${NC}\n"
 
