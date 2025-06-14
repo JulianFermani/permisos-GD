@@ -43,7 +43,14 @@ export class UsersService {
       const user = new UserEntity();
       Object.assign(user, body);
       user.password = hashSync(user.password, 10);
+      const defaultRole = await this.roleRepository.findOneBy({ code: "user" });
+
+      if (!defaultRole) {
+        throw new NotFoundException("Default Role not found");
+      }
+      user.rol = defaultRole;
       await this.repository.save(user);
+
       return { status: "created" };
     } catch (error) {
       throw new HttpException("Error de creacion", 500);
