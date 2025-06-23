@@ -22,20 +22,28 @@ export class AuthService {
     requiredPermissions: string[],
   ): Promise<UserEntity> {
     const payload = this.jwtService.getPayload(token);
+
     const user = await this.usersService.findByEmail(payload.email);
 
     console.log(`token: ${token}`);
-    console.log(`requiredPermissions ${requiredPermissions}`);
-    const userFound = await this.userRepository.findOneBy({ id: user.id });
-    console.log(`userMail: ${userFound.email}`);
-    const userPermissions = await this.roleRepository.findOne({
-      where: { id: userFound.id },
-      relations: ["permissions"],
-    });
+    console.log(`requiredPermissions: ${requiredPermissions}`);
 
-    console.log(`userPermissions: ${userPermissions.name}`);
+    if (!user) {
+      throw new UnauthorizedException("Usuario no encontrado.");
+    }
 
-    const permissionsStrings = userPermissions.permissions.map((p) => p.name);
+    console.log(`userMail: ${user.email}`);
+
+    if (!user.rol || !user.rol.permissions) {
+      throw new UnauthorizedException(
+        "Roles o permisos no definidos para el usuario.",
+      );
+    }
+
+    const permissionsStrings = user.rol.permissions.map((p) => p.name);
+
+    console.log(`userPermissions: ${user.rol.name} (Rol name)`);
+
     const hasAllPermissions = requiredPermissions.every((perm) =>
       permissionsStrings.includes(perm),
     );
@@ -43,7 +51,6 @@ export class AuthService {
     if (!hasAllPermissions) {
       throw new UnauthorizedException("No tiene permisos suficientes");
     }
-
     return user;
   }
 }
