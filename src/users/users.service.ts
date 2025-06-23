@@ -6,7 +6,6 @@ import {
 } from "@nestjs/common";
 import { LoginDTO } from "src/interfaces/login.dto";
 import { RegisterDTO } from "src/interfaces/register.dto";
-import { UserI } from "src/interfaces/user.interface";
 import { UserEntity } from "./entities/user.entity";
 import { hashSync, compareSync } from "bcrypt";
 import { JwtService } from "src/jwt/jwt.service";
@@ -29,21 +28,19 @@ export class UsersService {
     return this.jwtService.refreshToken(refreshToken);
   }
 
-  canDo(user: UserI, permission: string): boolean {
-    console.log(`Permission pedido: ${permission}`);
-    const result = user.permissionCodes.includes(permission);
-    if (!result) {
-      throw new UnauthorizedException();
-    }
-    return true;
-  }
-
   async register(body: RegisterDTO) {
     try {
       const user = new UserEntity();
       Object.assign(user, body);
       user.password = hashSync(user.password, 10);
+      const defaultRole = await this.roleRepository.findOneBy({ code: "user" });
+
+      if (!defaultRole) {
+        throw new NotFoundException("Default Role not found");
+      }
+      user.rol = defaultRole;
       await this.repository.save(user);
+
       return { status: "created" };
     } catch (error) {
       throw new HttpException("Error de creacion", 500);
@@ -52,23 +49,42 @@ export class UsersService {
 
   async login(body: LoginDTO) {
     const user = await this.findByEmail(body.email);
+
     if (user == null) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException("Usuario o contraseña incorrectos.");
     }
+
     const compareResult = compareSync(body.password, user.password);
     if (!compareResult) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException("Usuario o contraseña incorrectos.");
     }
+
+    if (!user.rol) {
+      console.error(
+        `Error: El usuario ${user.email} no tiene un rol asignado en la base de datos.`,
+      );
+      throw new UnauthorizedException(
+        "El usuario no tiene un rol asignado. Contacte al administrador.",
+      );
+    }
+
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      rolId: user.rol.id,
+      rolCode: user.rol.code,
+    };
+
     return {
-      accessToken: this.jwtService.generateToken({ email: user.email }, "auth"),
-      refreshToken: this.jwtService.generateToken(
-        { email: user.email },
-        "refresh",
-      ),
+      accessToken: this.jwtService.generateToken(payload, "auth"),
+      refreshToken: this.jwtService.generateToken(payload, "refresh"),
     };
   }
   async findByEmail(email: string): Promise<UserEntity> {
-    return await this.repository.findOneBy({ email });
+    return await this.repository.findOne({
+      where: { email },
+      relations: ["rol"],
+    });
   }
 
   async updateRol(id: number, updateUserRol: UpdateUserRole): Promise<string> {

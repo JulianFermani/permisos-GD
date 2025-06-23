@@ -1,6 +1,8 @@
-import { IsString } from "class-validator";
+import { IsInt } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class IdOnlyPermissionDto {
-  @IsString()
-  name: string;
+  @ApiProperty()
+  @IsInt()
+  id: number;
 }

@@ -1,3 +1,4 @@
+// src/roles/entities/role.entity.ts
 import { Permission } from "src/permissions/entities/permission.entity";
 import { UserEntity } from "src/users/entities/user.entity";
 import {
@@ -5,7 +6,6 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
-  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -24,7 +24,9 @@ export class Role {
   @Column()
   description: string;
 
-  @ManyToMany(() => Permission, (permission) => permission.roles)
+  @ManyToMany(() => Permission, (permission) => permission.roles, {
+    eager: true,
+  })
   @JoinTable()
   permissions: Permission[];
 

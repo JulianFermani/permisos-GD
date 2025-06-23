@@ -7,6 +7,7 @@ import { UsersService } from "./users/users.service";
 import { RolesModule } from "./roles/roles.module";
 import { PermissionsModule } from "./permissions/permissions.module";
 import { UsersModule } from "./users/users.module";
+import { AuthService } from "./middlewares/auth.services";
 
 @Module({
   imports: [
@@ -25,6 +26,6 @@ import { UsersModule } from "./users/users.module";
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [AuthGuard, JwtService, UsersService],
+  providers: [AuthGuard, JwtService, UsersService, AuthService],
 })
 export class AppModule {}
