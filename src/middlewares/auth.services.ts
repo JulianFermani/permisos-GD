@@ -10,47 +10,55 @@ import { Repository } from "typeorm";
 export class AuthService {
   constructor(
     private jwtService: JwtService,
-    private usersService: UsersService,
-    @InjectRepository(Role)
-    private roleRepository: Repository<Role>,
-    @InjectRepository(UserEntity)
-    private userRepository: Repository<UserEntity>,
+    private usersService: UsersService, // Asumo que inyectas UsersService aquí para obtener el usuario
   ) {}
 
   async validateTokenAndPermissions(
     token: string,
     requiredPermissions: string[],
-  ): Promise<UserEntity> {
-    const payload = this.jwtService.getPayload(token);
+  ): Promise<boolean> {
+    try {
+      const payload = this.jwtService.getPayload(token, "auth"); // 'auth' para accessToken
+      console.log("Payload del token:", payload); // Ver el payload
 
-    const user = await this.usersService.findByEmail(payload.email);
+      const user = await this.usersService.findByEmail(payload.email); // Obtener el usuario
+      console.log("Usuario encontrado:", user ? user.email : "No encontrado"); // Confirmar si el usuario existe
 
-    console.log(`token: ${token}`);
-    console.log(`requiredPermissions: ${requiredPermissions}`);
+      if (!user || !user.rol) {
+        // Asegúrate de que el usuario y su rol existen
+        console.log("Usuario o rol no encontrado.");
+        throw new UnauthorizedException("Invalid user or role information.");
+      }
 
-    if (!user) {
-      throw new UnauthorizedException("Usuario no encontrado.");
-    }
+      // Añade estos logs para ver los permisos
+      console.log("Rol del usuario:", user.rol.code);
+      console.log(
+        "Permisos cargados en el rol:",
+        user.rol.permissions.map((p) => p.name),
+      ); // <-- ¡Este es crucial!
+      console.log("Permisos requeridos:", requiredPermissions);
 
-    console.log(`userMail: ${user.email}`);
+      const userPermissions = user.rol.permissions.map((p) => p.name);
+      const hasAllPermissions = requiredPermissions.every((perm) =>
+        userPermissions.includes(perm),
+      );
 
-    if (!user.rol || !user.rol.permissions) {
+      if (!hasAllPermissions) {
+        console.log(
+          `Faltan permisos. User has: [<span class="math-inline">\{userPermissions\.join\(', '\)\}\], Required\: \[</span>{requiredPermissions.join(', ')}]`,
+        );
+        throw new UnauthorizedException("Insufficient permissions.");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error en validateTokenAndPermissions:", error.message);
+      if (error.name === "TokenExpiredError") {
+        throw new UnauthorizedException("TokenExpiredError"); // Re-lanzar para que el interceptor lo maneje
+      }
       throw new UnauthorizedException(
-        "Roles o permisos no definidos para el usuario.",
+        "Invalid token or permissions check failed.",
       );
     }
-
-    const permissionsStrings = user.rol.permissions.map((p) => p.name);
-
-    console.log(`userPermissions: ${user.rol.name} (Rol name)`);
-
-    const hasAllPermissions = requiredPermissions.every((perm) =>
-      permissionsStrings.includes(perm),
-    );
-
-    if (!hasAllPermissions) {
-      throw new UnauthorizedException("No tiene permisos suficientes");
-    }
-    return user;
   }
 }

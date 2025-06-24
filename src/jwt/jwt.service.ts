@@ -8,11 +8,11 @@ export class JwtService {
   config = {
     auth: {
       secret: "authSecret",
-      expiresIn: "15m",
+      expiresIn: "7d",
     },
     refresh: {
       secret: "refreshSecret",
-      expiresIn: "1d",
+      expiresIn: "7d",
     },
   };
   generateToken(
